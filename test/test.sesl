@@ -1,0 +1,6 @@
+try {
+    problem BIG PROBLEM
+} prob {
+    echo there is a problem
+    echo it is: $prob
+}

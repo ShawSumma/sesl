@@ -1,0 +1,9 @@
+{
+	"name": "sesl",
+	"authors": [
+		"shaw summa"
+	],
+	"description": "smalled embeded scripting language",
+	"copyright": "Copyright © 2019, shaw summa",
+	"license": "MIT"
+}
