@@ -28,6 +28,9 @@ Value libget(State state, Value[] args) {
 }
 
 Value libadd(State state, Value[] args) {
+    foreach (i; args) {
+        typeMustBe(i, Type.DOUBLE);
+    }
     double n = 0;
     foreach (i; args) {
         n += i.obj._double;
@@ -36,6 +39,9 @@ Value libadd(State state, Value[] args) {
 }
 
 Value libsub(State state, Value[] args) {
+    foreach (i; args) {
+        typeMustBe(i, Type.DOUBLE);
+    }
     if (args.length == 1) {
         return Value(-args[0].obj._double);
     }
@@ -47,6 +53,9 @@ Value libsub(State state, Value[] args) {
 }
 
 Value libmul(State state, Value[] args) {
+    foreach (i; args) {
+        typeMustBe(i, Type.DOUBLE);
+    }
     double n = 1;
     foreach (i; args) {
         n *= i.obj._double;
@@ -55,6 +64,9 @@ Value libmul(State state, Value[] args) {
 }
 
 Value libdiv(State state, Value[] args) {
+    foreach (i; args) {
+        typeMustBe(i, Type.DOUBLE);
+    }
     if (args.length == 1) {
         return Value(1/args[0].obj._double);
     }
@@ -66,6 +78,9 @@ Value libdiv(State state, Value[] args) {
 }
 
 Value libmod(State state, Value[] args) {
+    foreach (i; args) {
+        typeMustBe(i, Type.DOUBLE);
+    }
     double n = args[0].obj._double;
     foreach (i; args[1..$]) {
         n = n % i.obj._double;
@@ -74,6 +89,9 @@ Value libmod(State state, Value[] args) {
 }
 
 Value order(string S)(State state, Value[] args) {
+    foreach (i; args) {
+        typeMustBe(i, Type.DOUBLE);
+    }
     Value v = args[0];
     foreach (i; args[1..$]) {
         if (mixin("v.obj._double" ~ S ~ "i.obj._double")) {
@@ -87,8 +105,11 @@ Value order(string S)(State state, Value[] args) {
 }
 
 Value proc(State state, Value[] args) {
+    foreach (i; args[1..$-1]) {
+        typeMustBe(i, Type.STRING);
+    }
     Program fnpre = args[$-1].obj._program;
-    Program fn = new Program(fnpre);
+    Program fn = new Program(fnpre, to!string(args[0]));
     foreach (i; args[1..$-1]) {
         fn.argnames ~= i.obj._string;
     }
@@ -98,10 +119,14 @@ Value proc(State state, Value[] args) {
 
 Value iflib(State state, Value[] args) {
     Value ret;
-    if (args[0].boolean) {
+    mustBeCallable(args[0]);
+    if (args[0].opCall!false(state).boolean) {
+        mustBeCallable(args[1]);
         ret = args[1].opCall!false(state);
     }
     else if (args.length == 3) {
+        mustBeCallable(args[1]);
+        mustBeCallable(args[2]);
         ret = args[2].opCall!false(state);
     }
     else {
@@ -111,6 +136,9 @@ Value iflib(State state, Value[] args) {
 }
 
 Value pass(State state, Value[] args) {
+    if (args.length == 0) {
+        throw new ArgcProblem(args);
+    }
     return args[$-1];
 }
 
@@ -119,6 +147,9 @@ Value liblist(State state, Value[] args) {
 }
 
 Value libtable(State state, Value[] args) {
+    if (args.length % 2 != 0) {
+        throw new ArgcProblem(args);
+    }
     Value[Value] table;
     bool store = false;
     Value hold = Value();
@@ -136,6 +167,7 @@ Value libtable(State state, Value[] args) {
 
 Value libwhile(State state, Value[] args) {
     Value ret = Value();
+    mustBeCallable(args[1]);
     while (args[0].opCall!false(state).boolean) {
         ret = args[1].opCall!false(state);
     }
@@ -144,6 +176,10 @@ Value libwhile(State state, Value[] args) {
 
 Value libfor(State state, Value[] args) {
     Value ret = Value();
+    mustBeCallable(args[0]);
+    mustBeCallable(args[1]);
+    mustBeCallable(args[2]);
+    mustBeCallable(args[3]);
     args[0].opCall!false(state);
     while (args[1].opCall!false(state).boolean) {
         ret = args[3].opCall!false(state);
@@ -162,7 +198,16 @@ Value libwrite(State state, Value[] args) {
     return Value();
 }
 
+Value libpush(State state, Value[] args) {
+    typeMustBe(args[0], Type.LIST);
+    args[0].obj._list ~= args[1..$];
+    return args[0];
+} 
+
 Value liband(State state, Value[] args) {
+    foreach (i; args) {
+        mustBeCallable(i);
+    }
     foreach (fn; args) {
         Value v = fn.opCall!false(state);
         if (!v.boolean) {
@@ -173,6 +218,9 @@ Value liband(State state, Value[] args) {
 }
 
 Value libor(State state, Value[] args) {
+    foreach (i; args) {
+        mustBeCallable(i);
+    }
     foreach (fn; args) {
         Value v = fn.opCall!false(state);
         if (v.boolean) {
@@ -183,7 +231,7 @@ Value libor(State state, Value[] args) {
 }
 
 Value libproblem(State state, Value[] args) {
-    if (args.length == 1 && args[0].type == Value.Enum.PROBLEM) {
+    if (args.length == 1 && args[0].type == Type.PROBLEM) {
         throw args[0].obj._problem;
     }
     else {
@@ -201,6 +249,7 @@ Value libproblem(State state, Value[] args) {
 Value libtry(State state, Value[] args) {
     switch (args.length) {
         case 1: {
+            mustBeCallable(args[0]);
             try {
                 return args[0](state);
             }
@@ -209,6 +258,8 @@ Value libtry(State state, Value[] args) {
             }
         }
         case 2: {
+            mustBeCallable(args[0]);
+            mustBeCallable(args[1]);
             try {
                 return args[0](state);
             }
@@ -217,6 +268,8 @@ Value libtry(State state, Value[] args) {
             }
         }
         case 3: {
+            mustBeCallable(args[0]);
+            mustBeCallable(args[2]);
             try {
                 return args[0](state);
             }

@@ -18,3 +18,4 @@ perf.data
 perf.data.old
 dscanner.ini
 out.txt
+*.out

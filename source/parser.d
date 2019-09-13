@@ -90,7 +90,7 @@ class Word {
 			str.read;
 			type = Type.STR;
 		}
-		while (!canFind("\t\r\n \0){}$;", str.peek)) {
+		while (!canFind("\t\r\n \0)({}$;", str.peek)) {
 			char got = str.read;
 			if (type == Type.NUM && !got.isDigit && got != '.') {
 				type = Type.STR;
@@ -155,6 +155,7 @@ class Program {
 	Command[] commands;
 	string[] argnames;
 	size_t where;
+	string name;
 	BytecodeCompiler comp;
 	this(ParseString str) {
 		str.strip;
@@ -182,5 +183,15 @@ class Program {
 		argnames = old.argnames;
 		where = old.where;
 		comp = old.comp;
+		name = old.name;
+	}
+	this(Program old, string n) {
+		line = old.line;
+		col = old.col;
+		commands = old.commands;
+		argnames = old.argnames;
+		where = old.where;
+		comp = old.comp;
+		name = n;
 	}
 }

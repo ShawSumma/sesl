@@ -25,7 +25,7 @@ void repl() {
         ParseString str = new ParseString(code);
         Program prog = new Program(str);
         Value got = state.run(prog);
-        if (got.type != Value.Enum.NULL) {
+        if (got.type != Type.NULL) {
             writeln(got);
         }
     }

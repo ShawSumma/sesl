@@ -10,7 +10,6 @@ import rtloop;
 void main(string[] args) {
     string[string] opts = [
         "mode": "walk",
-        "strict": "0",
     ];
     foreach (i; args) {
         if (i.length > 2 && i[0..2] == "--") {
@@ -31,7 +30,7 @@ void main(string[] args) {
         names ~= i;
     }
     if (names.length == 0) {
-       repl(); 
+        repl();
     }
     else {
         foreach (i; names) {

@@ -1,5 +1,5 @@
 proc fib n {
-    if (< $n 2) {
+    if {< $n 2} {
         pass $n
     } {
         + (fib (- $n 1)) (fib (- $n 2))

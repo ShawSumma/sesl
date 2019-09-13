@@ -26,10 +26,18 @@ LocalLevel createLocalLevel() {
     }
 }
 
+void setLocal(ref LocalLevel lvl, string name, Value val) {
+    lvl[name] = val;
+}
+
+void setLocal(ref LocalLevel lvl, string name, Fun val) {
+    lvl[name] = Value(val, name);
+}
+
 struct FlatLevel {
     size_t[] lts = [0];
     size_t[] gts = [0];
-    Value[] vals = [Value()];
+    Value[] vals = [new Value()];
     string[] strs = [""];
     Value* opBinaryRight(string op)(ref string test) {
         static if (op == "in") {
