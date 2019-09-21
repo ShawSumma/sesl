@@ -90,7 +90,7 @@ class Word {
 			str.read;
 			type = Type.STR;
 		}
-		while (!canFind("\t\r\n \0)({}$;", str.peek)) {
+		while (!canFind("\t\r\n \0(){}$&;", str.peek)) {
 			char got = str.read;
 			if (type == Type.NUM && !got.isDigit && got != '.') {
 				type = Type.STR;
@@ -194,4 +194,33 @@ class Program {
 		comp = old.comp;
 		name = n;
 	}
+}
+
+ulong notOkay(string code) {
+	size_t pl = 0;
+	ulong depth = 0;
+	while (pl < code.length) {
+		switch (code[pl]) {
+			case '{', '(': {
+				depth ++;
+				break;
+			}
+			case '}', ')': {
+				depth --;
+				break;
+			}
+			case '"': {
+				while (pl < code.length && code[pl] != '"') {
+					if (code[pl] == '\\') {
+						pl ++;
+					}
+					pl ++;
+				}
+				break;
+			}
+			default: {}
+		}
+		pl ++;
+	}
+	return depth;
 }

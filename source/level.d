@@ -1,8 +1,9 @@
 import std.stdio;
 import value;
 import locals;
+import states;
 
-version = LOCALS_ARE_LEVEL;
+version = LOCALS_ARE_AA;
 
 version (LOCALS_ARE_AA) {
     alias LocalLevel = Value[string];
@@ -30,14 +31,18 @@ void setLocal(ref LocalLevel lvl, string name, Value val) {
     lvl[name] = val;
 }
 
+void setLocal(ref LocalLevel lvl, string name, Value function(State, Args) val) {
+    lvl[name] = newValue(ValueFun(val, name));
+}
+
 void setLocal(ref LocalLevel lvl, string name, Fun val) {
-    lvl[name] = Value(val, name);
+    lvl[name] = newValue(ValueFun(val, name));
 }
 
 struct FlatLevel {
     size_t[] lts = [0];
     size_t[] gts = [0];
-    Value[] vals = [new Value()];
+    Value[] vals = [newValue()];
     string[] strs = [""];
     Value* opBinaryRight(string op)(ref string test) {
         static if (op == "in") {
@@ -85,12 +90,12 @@ struct FlatLevel {
                 strs ~= "";
                 lts ~= 0;
                 gts ~= 0;
-                vals ~= Value();
+                vals ~= newValue();
                 gts[where] = strs.length;
                 strs ~= "";
                 lts ~= 0;
                 gts ~= 0;
-                vals ~= Value();
+                vals ~= newValue();
             }
         }
         static if (!check) {
@@ -99,12 +104,12 @@ struct FlatLevel {
             strs ~= "";
             lts ~= 0;
             gts ~= 0;
-            vals ~= Value();
+            vals ~= newValue();
             gts[where] = strs.length;
             strs ~= "";
             lts ~= 0;
             gts ~= 0;
-            vals ~= Value();
+            vals ~= newValue();
         }
         vals[where] = val;
     }

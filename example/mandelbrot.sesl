@@ -11,7 +11,8 @@ proc mandel-iter cx cy xscl yscl {
         set x $xtemp
         set iter (+ $iter 1)
     }
-    if (>= (- $max-iter 1) $iter) {
+    echo $iter
+    if {>= (- $max-iter 1) $iter} {
         write #
     } {
         write " "

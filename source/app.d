@@ -9,7 +9,7 @@ import rtloop;
 
 void main(string[] args) {
     string[string] opts = [
-        "mode": "walk",
+        "mode": "interp",
     ];
     foreach (i; args) {
         if (i.length > 2 && i[0..2] == "--") {
@@ -36,7 +36,7 @@ void main(string[] args) {
         foreach (i; names) {
             ParseString code = new ParseString(cast(string) read(i));
             Program prog = new Program(code);
-            final switch (opts["mode"]) {
+            switch (opts["mode"]) {
                 case "interp": {
                     BytecodeCompiler comp = prog.compile();
                     Program runprog = new Program(comp);
@@ -48,6 +48,9 @@ void main(string[] args) {
                     State state = new State();
                     state.run(prog);
                     break;
+                }
+                default: {
+                    throw new Error("mode not known " ~ opts["mode"]);
                 }
             }
         }

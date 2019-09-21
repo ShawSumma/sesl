@@ -2,22 +2,26 @@ import std.range;
 import std.stdio;
 import std.conv;
 import std.container;
+import std.algorithm;
+import core.memory;
+import core.stdc.stdlib;
 import value;
 import parser;
 import locals;
 import byteconv;
 import level;
+import errors;
 
 class State {
     LocalLevel[] locals;
-    Value[] stack;
+    Value *stack = null;
     size_t stacksize = 0;
-    size_t stacklen = 100;
+    size_t stacka = 4; 
 	this() {
         LocalLevel local = createLocalLevel();
-		local.setLocal("nil", Value());
-        local.setLocal("true", Value(true));
-        local.setLocal("false", Value(false));
+		local.setLocal("nil", newValue());
+        local.setLocal("true", newValue(true));
+        local.setLocal("false", newValue(false));
         local.setLocal("try", &libtry);
         local.setLocal("problem", &libproblem);
 		local.setLocal("while", &libwhile);
@@ -38,12 +42,18 @@ class State {
         local.setLocal(">", &order!">");
         local.setLocal("<=", &order!"<=");
         local.setLocal(">=", &order!">=");
+        local.setLocal("=", &libequal);
+        local.setLocal("!=", &libnotequal);
+        local.setLocal("expr", &libexpr);
         local.setLocal("+", &libadd);
         local.setLocal("*", &libmul);
         local.setLocal("-", &libsub);
         local.setLocal("/", &libdiv);
+        local.setLocal("^", &libmod);
         locals ~= local;
-        stack.length = stacklen;
+        stack = cast(Value *) GC.malloc(Value.sizeof * stacka);
+    }
+    ~this() {
     }
 	void set(Value name, Value v) {
 		locals[$-1][to!string(name)] = v;
@@ -62,16 +72,19 @@ class State {
                 return *v;
             }
         }
+        writeln(s, " ", locals);
         throw new Error("name not found " ~ s);
     }
 	Value run(Program prog) {
         if (prog.where && prog.comp !is null) {
+            void check() {
+                if (stacksize + 2 > stacka) {
+                    stacka *= 2;
+                    stack = cast(Value *) GC.realloc(stack, Value.sizeof * stacka);
+                }
+            }
             size_t pl = prog.where;
             while (pl < prog.comp.opcodes.length) {
-                if (stacksize + 4 > stacklen) {
-                    stacklen *= 2;
-                    stack.length = stacklen;
-                }
                 immutable Opcode op = prog.comp.opcodes[pl];
                 immutable size_t arg = op.value;
                 final switch (op.type) {
@@ -79,17 +92,20 @@ class State {
                         break;
                     }
                     case Opcode.Type.FUNC: {
-                        stack[stacksize] = Value(new Program(prog, pl+1));
-                        stacksize ++;
+                        check;
+                        stack[stacksize] = newValue(new Program(prog, pl+1));
                         pl = arg;
+                        stacksize ++;
                         break;
                     }
                     case Opcode.Type.PUSH: {
+                        check;
                         stack[stacksize] = prog.comp.values[arg];
                         stacksize ++;
                         break;
                     }
                     case Opcode.Type.LOAD: {
+                        check;
                         stack[stacksize] = lookup(prog.comp.strings[arg]);
                         stacksize ++;
                         break;
@@ -98,14 +114,12 @@ class State {
                         stacksize --;
                         break;
                     }
-                    case Opcode.Type.STORE: {
-                        set(prog.comp.strings[arg], stack[stacksize-1]);
-                        stacksize --;
-                        break;
-                    }
                     case Opcode.Type.CALL: {
-                        stack[stacksize-1-arg] = stack[stacksize-1-arg](this, stack[stacksize-arg..stacksize]);
                         stacksize -= arg;
+                        stack[stacksize-1] = stack[stacksize-1](
+                            this,
+                            Args(stack+stacksize, arg)
+                        );
                         break;
                     }
                     case Opcode.Type.RET: {
@@ -117,49 +131,52 @@ class State {
             return stack[--stacksize];
         }
         else {
-            Value ret = Value();
-            foreach (i; prog.commands) {
-                ret = run(i);
-            }
-            return ret;
+            throw new Error("Error: no longer supported: --mode=walk");
         }
+        // else {
+        //     Value ret = newValue();
+        //     foreach (i; prog.commands) {
+        //         ret = run(i);
+        //     }
+        //     return ret;
+        // }
 	}
-	Value run(Command cmd) {
-		return run(cmd.words);
-	}
-	Value run(Word[] words) {
-        Value func;
-        if (words[0].type == Word.Type.STR) {
-            func = lookup(words[0].value.str);
-        }
-        else {
-            func = run(words[0]);
-        }
-		Value[] args;
-		size_t count = words.length - 1;
-		args.length = count;
-		foreach (i; 0..count) {
-			args[i] = run(words[i+1]);
-		}
-        return func(this, args);
-	}
-    Value run(Word word) {
-        final switch (word.type) {
-            case Word.Type.LOAD: {
-                return lookup(word.value.load);
-            }
-            case Word.Type.CMD: {
-                return run(word.value.cmd);
-            }
-            case Word.Type.NUM: {
-                return Value(word.value.num);
-            }
-            case Word.Type.PROG: {
-                return Value(word.value.prog);
-            }
-            case Word.Type.STR: {
-                return Value(word.value.str);
-            }
-        }
-    }
+	// Value run(Command cmd) {
+	// 	return run(cmd.words);
+	// }
+	// Value run(Word[] words) {
+    //     Value func;
+    //     if (words[0].type == Word.Type.STR) {
+    //         func = lookup(words[0].value.str);
+    //     }
+    //     else {
+    //         func = run(words[0]);
+    //     }
+	// 	Value[] args;
+	// 	size_t count = words.length - 1;
+	// 	args.length = count;
+	// 	foreach (i; 0..count) {
+	// 		args[i] = run(words[i+1]);
+	// 	}
+    //     return func(this, args);
+	// }
+    // Value run(Word word) {
+    //     final switch (word.type) {
+    //         case Word.Type.LOAD: {
+    //             return lookup(word.value.load);
+    //         }
+    //         case Word.Type.CMD: {
+    //             return run(word.value.cmd);
+    //         }
+    //         case Word.Type.NUM: {
+    //             return newValue(word.value.num);
+    //         }
+    //         case Word.Type.PROG: {
+    //             return newValue(word.value.prog);
+    //         }
+    //         case Word.Type.STR: {
+    //             return newValue(word.value.str);
+    //         }
+    //     }
+    // }
 }

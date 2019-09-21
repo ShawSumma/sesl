@@ -10,7 +10,6 @@ struct Opcode {
         PUSH,
         LOAD,
         POP,
-        STORE,
         CALL,
         RET,
     }
@@ -32,7 +31,7 @@ void compile(Word word, ref BytecodeCompiler comp) {
     final switch (word.type) {
         case Word.Type.NUM: {
             size_t count = comp.values.length;
-            comp.values ~= Value(word.value.num);
+            comp.values ~= newValue(word.value.num);
             comp.opcodes ~= Opcode(Opcode.Type.PUSH, count);
             break;
         }
@@ -44,7 +43,7 @@ void compile(Word word, ref BytecodeCompiler comp) {
         }
         case Word.Type.STR: {
             size_t count = comp.values.length;
-            comp.values ~= Value(word.value.str);
+            comp.values ~= newValue(word.value.str);
             comp.opcodes ~= Opcode(Opcode.Type.PUSH, count);
             break;
         }
@@ -83,7 +82,7 @@ void compile(Program prog, ref BytecodeCompiler comp) {
     }
     if (prog.commands.length == 0) {
         size_t count = comp.values.length;
-        comp.values ~= Value();
+        comp.values ~= newValue();
         comp.opcodes ~= Opcode(Opcode.Type.PUSH, count);
     }
     else {

@@ -1,14 +1,20 @@
 import std.stdio;
 import std.math;
 import std.algorithm;
+import std.functional;
 import std.range;
 import std.conv;
+import core.memory;
 import states;
 import parser;
 import level;
 import errors;
 
-alias Fun = Value function(State state, Value[] args);
+Value newValue(T...)(T args) {
+	return new Value(args);
+}
+
+alias Fun = Value delegate(State, Args);
 alias Type = Value.Enum;
 
 struct ValueFun {
@@ -16,6 +22,10 @@ struct ValueFun {
 	string name;
 	this(Fun f, string n) {
 		fun = f;
+		name = n;
+	}
+	this(Value function(State, Args) f, string n) {
+		fun = toDelegate(f);
 		name = n;
 	}
 }
@@ -28,13 +38,18 @@ string printer(Value cur, Value[] above=null) {
 	}
 	final switch (cur.type) {
 		case Type.NULL: {
-			return "null";
+			return "nil";
 		}
 		case Type.BOOL: {
 			return to!string(cur.obj._bool);
 		}
 		case Type.STRING: {
-			return to!string(cur.obj._string);
+			if (above.length == 0) {
+				return to!string(cur.obj._string);
+			}
+			else {
+				return "\"" ~ to!string(cur.obj._string) ~ "\"";
+			}
 		}
 		case Type.DOUBLE: {
 			return to!string(cur.obj._double);
@@ -62,14 +77,61 @@ string printer(Value cur, Value[] above=null) {
 			return "(table" ~ lis ~ ")";
 		}
 		case Type.PROGRAM: {
-			return "<program>";
+			return "<program " ~ cur.obj._program.name ~ ">";
 		}
 		case Type.FUNCTION: {
-			return "<function>";
+			return "<function " ~ cur.obj._function.name ~ ">";
 		}
 		case Type.PROBLEM: {
 			return to!string(cur.obj._problem.msg);
 		}
+	}
+}
+
+struct Args {
+	Value *args;
+	ulong length = 0;
+	this(Value *vals, ulong len) {
+		args = cast(Value *) GC.malloc(Value.sizeof * len);
+		foreach (i; 0..len) {
+			args[i] = vals[i];
+		}
+		length = len;
+	}
+	~this() {
+		GC.free(args);
+	}
+	ref Value opIndex(size_t ind) {
+		return args[ind];
+	}
+	Args opSlice(size_t begin, size_t end) {
+		return Args(args+begin, end-begin);
+	}
+	ulong opDollar() {
+		return length;
+	}
+	int opApply(int delegate(Value) fn) {
+		foreach (i; 0..length) {
+			if (fn(args[i])) {
+				return 0;
+			}
+		}
+		return 1;
+	}
+	int opApply(int delegate(ulong, Value) fn) {
+		foreach (i; 0..length) {
+			if (fn(i, args[i])) {
+				return 0;
+			}
+		}
+		return 1;
+	}
+	Value[] copy() {
+		Value[] ret = new Value[length];
+		foreach (i; 0..length) {
+			ret[i] = args[i];
+		}
+		return ret;
 	}
 }
 
@@ -97,9 +159,7 @@ class Value {
 	}
 	Union obj;
 	Enum type = Enum.NULL;
-	this() {
-		type = Enum.NULL;
-	}
+	this() {}
 	this(bool v) {
 		obj._bool = v;
 		type = Enum.BOOL;
@@ -124,40 +184,35 @@ class Value {
 		obj._program = v;
 		type = Enum.PROGRAM;
 	}
-	this(Fun v, string name) {
-		obj._function = ValueFun(v, name);
+	this(ValueFun v) {
+		obj._function = v;
 		type = Enum.FUNCTION;
 	}
 	this(Problem v) {
 		obj._problem = v;
 		type = Enum.PROBLEM;
 	}
-	override size_t toHash() const nothrow {
+	override size_t toHash() const nothrow @trusted {
 		switch (type) {
 			case Enum.DOUBLE: {
-				union Union {
-					double d;
-					size_t s;
-				}
-				Union un;
-				un.d = obj._double;
-				return un.s;
-			}
-			case Enum.BOOL: {
-				return obj._bool ? 2 : 1;
+				return hashOf(obj._double);
 			}
 			case Enum.NULL: {
 				return 0;
+			}
+			case Enum.BOOL: {
+				return obj._bool + 1;
 			}
 			case Enum.STRING: {
 				return hashOf(obj._string);
 			}
 			default: {
-				throw new Error("attempt to hash " ~ to!string(this));
+				return -1;
 			}
 		}
 	}
-	bool opEquals(Value other) const {
+	bool opEquals(Value oobj) const {
+		Value other = cast(Value) oobj;
 		if (other.type != type) {
 			return false;
 		}
@@ -169,7 +224,7 @@ class Value {
 				return obj._bool == other.obj._bool;
 			}
 			case Enum.NULL: {
-				return 0;
+				return true;
 			}
 			case Enum.STRING: {
 				return obj._string == other.obj._string;
@@ -212,9 +267,9 @@ class Value {
 		}
 	}
 	Value opCall(bool T=true)(State state) {
-		return this.opCall!T(state, cast(Value[]) []);
+		return this.opCall!T(state, Args(null, 0));
 	}
-	Value opCall(bool T=true)(State state, Value[] args) {
+	Value opCall(bool T=true)(State state, Args args) {
 		switch (type) {
 			case Enum.PROGRAM: {
 				LocalLevel local = createLocalLevel();

@@ -17,11 +17,11 @@ void repl() {
                 write("    ");
             }
             code ~= readln;
-            diff = code.count('{') != code.count('}');
-            if (diff != 0) {
+            diff = notOkay(code);
+            if (diff) {
                 write("    ");
             }
-        } while (diff != 0);
+        } while (diff);
         ParseString str = new ParseString(code);
         Program prog = new Program(str);
         Value got = state.run(prog);
