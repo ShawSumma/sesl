@@ -6,6 +6,7 @@ import parser;
 import states;
 import byteconv;
 import rtloop;
+import value;
 
 void main(string[] args) {
     string[string] opts = [
@@ -36,23 +37,20 @@ void main(string[] args) {
         foreach (i; names) {
             ParseString code = new ParseString(cast(string) read(i));
             Program prog = new Program(code);
+            State state = new State();
             switch (opts["mode"]) {
                 case "interp": {
-                    BytecodeCompiler comp = prog.compile();
-                    Program runprog = new Program(comp);
-                    State state = new State();
-                    state.run(runprog);
+                    prog.compile;
                     break;
                 }
                 case "walk": {
-                    State state = new State();
-                    state.run(prog);
                     break;
                 }
                 default: {
                     throw new Error("mode not known " ~ opts["mode"]);
                 }
             }
+            state.run(prog);
         }
     }
 }

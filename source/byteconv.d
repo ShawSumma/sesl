@@ -1,5 +1,6 @@
 import std.stdio;
 import std.range;
+import std.algorithm;
 import parser;
 import value;
 
@@ -22,9 +23,26 @@ struct Opcode {
 }
 
 class BytecodeCompiler {
+    ulong[] stackneed;
+    ulong[] ulongs;
     Opcode[] opcodes;
     Value[] values;
     string[] strings;
+}
+
+ulong stackNeeded(Command cmd, ulong *tot = null) {
+    if (tot == null) {
+        tot = new ulong(0);
+    }
+    foreach (i; cmd.words) {
+        if (i.type == Word.Type.CMD) {
+            stackNeeded(i.value.cmd, tot);
+        }
+        else {
+            (*tot) ++;
+        }
+    }
+    return *tot;
 }
 
 void compile(Word word, ref BytecodeCompiler comp) {
@@ -59,23 +77,26 @@ void compile(Word word, ref BytecodeCompiler comp) {
 }
 
 void compile(Command cmd, ref BytecodeCompiler comp) {
-    if (cmd.words[0].type == Word.Type.STR) {
-        size_t count = comp.strings.length;
-        comp.strings ~= cmd.words[0].value.str;
-        comp.opcodes ~= Opcode(Opcode.Type.LOAD, count);
-    }
-    else {
-        cmd.words[0].compile(comp);
-    }
+    // if (cmd.words[0].type == Word.Type.STR) {
+    //     size_t count = comp.strings.length;
+    //     comp.strings ~= cmd.words[0].value.str;
+    //     comp.opcodes ~= Opcode(Opcode.Type.LOAD, count);
+    // }
+    // else {
+    cmd.words[0].compile(comp);
+    // }
     foreach (i; cmd.words[1..$]) {
         i.compile(comp);
     }
     comp.opcodes ~= Opcode(Opcode.Type.CALL, cmd.words.length - 1);
+    comp.stackneed[$-1] = max(cmd.stackNeeded, comp.stackneed[$-1]);
 }
 
 void compile(Program prog, ref BytecodeCompiler comp) {
     size_t begin = comp.opcodes.length;
+    prog.where = comp.opcodes.length;
     comp.opcodes ~= Opcode(Opcode.Type.FUNC);
+    comp.stackneed ~= 1;
     foreach (i; prog.commands) {
         i.compile(comp);
         comp.opcodes ~= Opcode(Opcode.Type.POP);
@@ -89,7 +110,12 @@ void compile(Program prog, ref BytecodeCompiler comp) {
         comp.opcodes.popBack;
     }
     comp.opcodes ~= Opcode(Opcode.Type.RET);
-    comp.opcodes[begin].value = comp.opcodes.length-1;
+    comp.opcodes[begin].value = comp.ulongs.length;
+    comp.ulongs ~= comp.opcodes.length-1;
+    comp.ulongs ~= comp.stackneed[$-1];
+    prog.comp = comp;
+    prog.stackneed = comp.stackneed[$-1];
+    comp.stackneed.popBack;
 }
 
 BytecodeCompiler compile(Program prog) {

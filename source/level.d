@@ -11,9 +11,6 @@ version (LOCALS_ARE_AA) {
 version (LOCALS_ARE_LEVEL) {
     alias LocalLevel = Level;
 }
-version (LOCALS_ARE_FLAT_LEVEL) {
-    alias LocalLevel = FlatLevel;
-}
 
 LocalLevel createLocalLevel() {
     version (LOCALS_ARE_AA) {
@@ -22,128 +19,18 @@ LocalLevel createLocalLevel() {
     version (LOCALS_ARE_LEVEL) {
         return LocalLevel();
     }
-    version (LOCALS_ARE_FLAT_LEVEL) {
-        return LocalLevel();
-    }
 }
 
 void setLocal(ref LocalLevel lvl, string name, Value val) {
     lvl[name] = val;
 }
 
-void setLocal(ref LocalLevel lvl, string name, Value function(State, Args) val) {
+void setLocal(ref LocalLevel lvl, string name, Value function(State, Value[]) val) {
     lvl[name] = newValue(ValueFun(val, name));
 }
 
 void setLocal(ref LocalLevel lvl, string name, Fun val) {
     lvl[name] = newValue(ValueFun(val, name));
-}
-
-struct FlatLevel {
-    size_t[] lts = [0];
-    size_t[] gts = [0];
-    Value[] vals = [newValue()];
-    string[] strs = [""];
-    Value* opBinaryRight(string op)(ref string test) {
-        static if (op == "in") {
-            ulong place = 0;
-            before:
-            string str = strs[place];
-            size_t slen = str.length;
-            size_t tlen = test.length;
-            if (slen != tlen) {
-                if (slen < tlen) {
-                    place = lts[place];
-                }
-                else {
-                    place = gts[place];
-                }
-                if (place == 0) {
-                    return null;
-                }
-                goto before;
-            }
-            foreach (i; 0..slen) {
-                char sc = str[i];
-                char tc = test[i];
-                if (sc != tc) {
-                    if (sc < tc) {
-                        place = lts[place];
-                    }
-                    else {
-                        place = gts[place];
-                    }
-                    if (place == 0) {
-                        return null;
-                    }
-                    goto before;
-                }
-            }
-            return &vals[place];
-        }
-    }
-    void setNode(bool check=true)(size_t where, Value val, string test) {
-        static if (check) {
-            if (strs[where] == "") {
-                strs[where] = test;
-                lts[where] = strs.length;
-                strs ~= "";
-                lts ~= 0;
-                gts ~= 0;
-                vals ~= newValue();
-                gts[where] = strs.length;
-                strs ~= "";
-                lts ~= 0;
-                gts ~= 0;
-                vals ~= newValue();
-            }
-        }
-        static if (!check) {
-            strs[where] = test;
-            lts[where] = strs.length;
-            strs ~= "";
-            lts ~= 0;
-            gts ~= 0;
-            vals ~= newValue();
-            gts[where] = strs.length;
-            strs ~= "";
-            lts ~= 0;
-            gts ~= 0;
-            vals ~= newValue();
-        }
-        vals[where] = val;
-    }
-    void opIndexAssign(Value aval, string test) {
-        size_t where = 0;
-        begin:
-        string here = strs[where];
-        if (here == "") {
-            setNode!false(where, aval, test);
-            return;           
-        }
-        int cval = 0;
-        if (test.length < here.length) {
-            where = gts[where];
-            goto begin;
-        }
-        if (test.length > here.length) {
-            where = lts[where];
-            goto begin;
-        }
-        foreach (i; 0..test.length) {
-            char ac = test[i];
-            char bc = here[i];
-            if (ac < bc) {
-                where = gts[where];
-                goto begin;
-            }
-            if (ac > bc) {
-                where = lts[where];
-                goto begin;
-            }
-        }
-        setNode(where, aval, test);
-    }
 }
 
 struct Level {

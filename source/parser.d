@@ -30,15 +30,33 @@ class ParseString {
 			col = 0;
 		}
 		col ++;
+		if (got == '#') {
+			while (peek != '\n' && peek != '\r' && peek != '\0') {
+				read;
+			}
+			return '\n';
+		}
 		return got;
 	}
 	void lstrip() {
-		while (canFind("\t ", peek)) {
+		while (canFind("\t #", peek)) {
+			if (peek == '#') {
+				while (peek != '\n' && peek != '\r' && peek != '\0') {
+					read;
+				}
+				lstrip;
+			}
 			read;
 		}
 	}
 	void strip() {
 		while (canFind("\r\n\t ", peek)) {
+			while (peek == '#') {
+				while (peek != '\n' && peek != '\r' && peek != '\0') {
+					read;
+				}
+				strip;
+			}
 			read;
 		}
 	}
@@ -63,6 +81,10 @@ class Word {
 	}
 	Type type;
 	Value value;
+	this(Command cmd) {
+		type = Type.CMD;
+		value.cmd = cmd;
+	}
 	this(ParseString str) {
 		type = Type.NUM;
 		if (str.peek == '$') {
@@ -90,7 +112,7 @@ class Word {
 			str.read;
 			type = Type.STR;
 		}
-		while (!canFind("\t\r\n \0(){}$&;", str.peek)) {
+		while (!canFind("\t\r\n \0(){}$&;|", str.peek)) {
 			char got = str.read;
 			if (type == Type.NUM && !got.isDigit && got != '.') {
 				type = Type.STR;
@@ -121,26 +143,34 @@ class Word {
 }
 
 class Command {
-	size_t line;
-	size_t col;
 	Word[] words;
+	this(Word[] ws=null) {
+		words = ws;
+	}
 	this(ParseString str, bool endline=true) {
-		if (!endline) {
-			str.strip;
-		}
-		else {
-			str.lstrip;
-		}
-		while (!canFind("\0});", str.peek)) {
-			if (endline && canFind("\r\n", str.peek)) {
-				break;
-			}
-			words ~= new Word(str);
+		void dostrip() {
 			if (!endline) {
 				str.strip;
 			}
 			else {
 				str.lstrip;
+			}
+		}
+		dostrip;
+		while (!canFind("\0});", str.peek)) {
+			if (endline && canFind("\r\n", str.peek)) {
+				break;
+			}
+			words ~= new Word(str);
+			dostrip;
+			while (str.peek == '|') {
+				str.read;
+				dostrip;
+				Command oldthis = new Command();
+				oldthis.words = words;
+				Word first = new Word(str);
+				words = [first, new Word(oldthis)];
+				dostrip;
 			}
 		}
 		if (str.peek == ')' || str.peek == ';') {
@@ -157,7 +187,9 @@ class Program {
 	size_t where;
 	string name;
 	BytecodeCompiler comp;
+	ulong stackneed = 1;
 	this(ParseString str) {
+		// writeln("1: ", cast(void *) this);
 		str.strip;
 		while (!canFind("}\0", str.peek)) {
 			commands ~= new Command(str);
@@ -168,15 +200,19 @@ class Program {
 		}
 		where = 0;
 	}
-	this(Program p, size_t w) {
+	this(Program p, size_t w, ulong sn) {
+		// writeln("2: ", cast(void *) this);
 		where = w;
 		comp = p.comp;
+		stackneed = sn;
 	}
 	this(BytecodeCompiler c, size_t w=1) {
+		// writeln("3: ", cast(void *) this);
 		where = w;
 		comp = c;
 	}
 	this(Program old) {
+		// writeln("4: ", cast(void *) this);
 		line = old.line;
 		col = old.col;
 		commands = old.commands;
@@ -184,8 +220,10 @@ class Program {
 		where = old.where;
 		comp = old.comp;
 		name = old.name;
+		stackneed = old.stackneed;
 	}
 	this(Program old, string n) {
+		// writeln("5: ", cast(void *) this);
 		line = old.line;
 		col = old.col;
 		commands = old.commands;
@@ -193,6 +231,7 @@ class Program {
 		where = old.where;
 		comp = old.comp;
 		name = n;
+		stackneed = old.stackneed;
 	}
 }
 
