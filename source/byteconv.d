@@ -23,16 +23,16 @@ struct Opcode {
 }
 
 class BytecodeCompiler {
-    ulong[] stackneed;
-    ulong[] ulongs;
+    size_t[] stackneed;
+    size_t[] size_ts;
     Opcode[] opcodes;
     Value[] values;
     string[] strings;
 }
 
-ulong stackNeeded(Command cmd, ulong *tot = null) {
+size_t stackNeeded(Command cmd, size_t *tot = null) {
     if (tot == null) {
-        tot = new ulong(0);
+        tot = new size_t(0);
     }
     foreach (i; cmd.words) {
         if (i.type == Word.Type.CMD) {
@@ -77,14 +77,7 @@ void compile(Word word, ref BytecodeCompiler comp) {
 }
 
 void compile(Command cmd, ref BytecodeCompiler comp) {
-    // if (cmd.words[0].type == Word.Type.STR) {
-    //     size_t count = comp.strings.length;
-    //     comp.strings ~= cmd.words[0].value.str;
-    //     comp.opcodes ~= Opcode(Opcode.Type.LOAD, count);
-    // }
-    // else {
     cmd.words[0].compile(comp);
-    // }
     foreach (i; cmd.words[1..$]) {
         i.compile(comp);
     }
@@ -110,9 +103,9 @@ void compile(Program prog, ref BytecodeCompiler comp) {
         comp.opcodes.popBack;
     }
     comp.opcodes ~= Opcode(Opcode.Type.RET);
-    comp.opcodes[begin].value = comp.ulongs.length;
-    comp.ulongs ~= comp.opcodes.length-1;
-    comp.ulongs ~= comp.stackneed[$-1];
+    comp.opcodes[begin].value = comp.size_ts.length;
+    comp.size_ts ~= comp.opcodes.length-1;
+    comp.size_ts ~= comp.stackneed[$-1];
     prog.comp = comp;
     prog.stackneed = comp.stackneed[$-1];
     comp.stackneed.popBack;

@@ -1,3 +1,4 @@
-range 1 10 | foreach {
-    args 0 | echo
+proc fac n {
+    + $n 1 | range | inject +
 }
+fac 5 | echo

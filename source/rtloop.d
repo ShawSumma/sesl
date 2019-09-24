@@ -10,7 +10,7 @@ void repl() {
     State state = new State();
     while (true) {
         string code;
-        ulong diff = 0;
+        size_t diff = 0;
         write(">>> ");
         do {
             foreach (i; 0..diff) {

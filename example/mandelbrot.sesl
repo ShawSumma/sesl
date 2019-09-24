@@ -9,10 +9,10 @@ proc mandel-iter cx cy xscl yscl {
         set xtemp (+ $x0 (- (* $x $x) (* $y $y)))
         set y (+ $y0 (* 2 $x $y))
         set x $xtemp
-        set iter (+ $iter 1)
+        get iter | + 1 | into iter
     }
-    if {>= (- $max-iter 1) $iter} {
-        write #
+    if {get max-iter | - 1 | >= $iter} {
+        write "#"
     } {
         write " "
     }

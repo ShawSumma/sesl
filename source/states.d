@@ -36,7 +36,6 @@ class State {
 
 		local.setLocal("while", &libwhile);
 		local.setLocal("for", &libfor);
-		local.setLocal("foreach", &libforeach);
 
 		local.setLocal("pass", &pass);
         local.setLocal("proc", &proc);
@@ -46,16 +45,20 @@ class State {
         
         local.setLocal("true", newValue(true));
         local.setLocal("false", newValue(false));
+        local.setLocal("not", &libnot);
         local.setLocal("and", &liband);
         local.setLocal("or", &libor);
         local.setLocal("if", &iflib);
 
+        local.setLocal("into", &libinto);
         local.setLocal("set", &libset);
         local.setLocal("get", &libget);
 
         local.setLocal("list", &liblist);
         local.setLocal("push", &libpush);
+        local.setLocal("strcat", &libstrcat);
         local.setLocal("table", &libtable);
+        local.setLocal("length", &liblength);
 
         local.setLocal("<", &order!"<");
         local.setLocal(">", &order!">");
@@ -77,8 +80,9 @@ class State {
         local.setLocal("apply", &libapply);
         local.setLocal("inject", &libinject);
         local.setLocal("filter", &libfilter);
+        local.setLocal("curry", &libcurry);
+
         local.setLocal("range", &librange);
-        local.setLocal("into", &libinto);
 
         locals ~= local;
         version (ONE_STACK) {
@@ -103,7 +107,8 @@ class State {
                 return *v;
             }
         }
-        throw new Error("name not found " ~ s);
+        SeslThrow(new Error("name not found " ~ s));
+		assert(0);
     }
 	Value run(Program prog) {
         if (prog.where && prog.comp !is null) {
@@ -129,9 +134,9 @@ class State {
                     }
                     case Opcode.Type.FUNC: {
                         version (ONE_STACK) { check; }
-                        Program p = new Program(prog, pl+1, prog.comp.ulongs[arg+1]);
+                        Program p = new Program(prog, pl+1, prog.comp.size_ts[arg+1]);
                         stack[stacksize] = newValue(p);
-                        pl = prog.comp.ulongs[arg];
+                        pl = prog.comp.size_ts[arg];
                         stacksize ++;
                         break;
                     }

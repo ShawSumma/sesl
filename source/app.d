@@ -7,6 +7,7 @@ import states;
 import byteconv;
 import rtloop;
 import value;
+import errors;
 
 void main(string[] args) {
     string[string] opts = [
@@ -14,12 +15,18 @@ void main(string[] args) {
     ];
     foreach (i; args) {
         if (i.length > 2 && i[0..2] == "--") {
-            string[] iall = i[2..$].split("=");
-            if (iall.length == 1) {
-                opts[iall[0]] = "true";
+            size_t spl = 0;
+            foreach (j; 2..i.length) {
+                if (j == '=') {
+                    spl = j;
+                    break;
+                }
+            }
+            if (spl == 0) {
+                opts[i[0..spl]] = "true";
             }
             else {
-                opts[iall[0]] = iall[1];
+                opts[i[0..spl]] = i[spl+1..$];
             }
         }
     }
@@ -47,7 +54,7 @@ void main(string[] args) {
                     break;
                 }
                 default: {
-                    throw new Error("mode not known " ~ opts["mode"]);
+                    SeslThrow(new Problem("mode not known " ~ opts["mode"]));
                 }
             }
             state.run(prog);

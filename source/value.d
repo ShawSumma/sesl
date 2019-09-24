@@ -85,7 +85,12 @@ string printer(Value cur, Value[] above=null) {
 			}
 		}
 		case Type.FUNCTION: {
-			return "<function " ~ cur.obj._function.name ~ ">";
+			if (cur.obj._function.name.length != 0) {
+				return "<function " ~ cur.obj._function.name ~ ">";
+			}
+			else {
+				return "<function>";
+			}
 		}
 		case Type.PROBLEM: {
 			return to!string(cur.obj._problem.msg);
@@ -117,7 +122,6 @@ struct Value {
 	}
 	Union obj;
 	Enum type = Enum.NULL;
-	// this() {}
 	this(bool v) {
 		obj._bool = v;
 		type = Enum.BOOL;
@@ -150,28 +154,7 @@ struct Value {
 		obj._problem = v;
 		type = Enum.PROBLEM;
 	}
-	double _double() {
-		switch (type) {
-			case Enum.DOUBLE: {
-				return obj._double;
-			}
-			case Enum.STRING: {
-				obj._double = parse!double(obj._string);
-				type = Enum.DOUBLE;
-				break;
-			}
-			case Enum.BOOL: {
-				obj._double = obj._bool ? 0 : 1;
-				type = Enum.DOUBLE;
-				break;
-			}
-			default: {
-				throw new Problem("Cannot convert " ~ to!string(this) ~ " to number");
-			}
-		}
-		return obj._double;
-	}
-	//override
+	// override
 	size_t toHash() const nothrow
 	// @trusted
 	{
@@ -193,8 +176,10 @@ struct Value {
 			}
 		}
 	}
+	// override bool opEquals(Object oobj) const {
 	bool opEquals(Value oobj) const {
 		Value other = cast(Value) oobj;
+		// writeln(other.type, " ", type);
 		if (other.type != type) {
 			return false;
 		}
@@ -262,12 +247,12 @@ struct Value {
 			case Enum.PROGRAM: {
 				LocalLevel local = createLocalLevel();
 				Program prog = obj._program;
-				ulong nargc = min(args.length, prog.argnames.length);
-				foreach (i; 0..nargc) {
-					local[prog.argnames[i]] = args[i];
-				}
-				local["args"] = newValue(args);
 				static if (T) {
+					size_t nargc = min(args.length, prog.argnames.length);
+					foreach (i; 0..nargc) {
+						local[prog.argnames[i]] = args[i];
+					}
+					local["args"] = newValue(args);
 					state.locals ~= local;
 				}
 				Value ret = state.run(prog);
@@ -292,19 +277,23 @@ struct Value {
 						got = got.obj._table[i];
 					}
 					else {
-						throw new Problem("cannot index " ~ to!string(got));
+						SeslThrow(new Problem("cannot index " ~ to!string(got)));
 					}
 				}
 				return got;
 			}
 			default: {
-				throw new Problem("not callable " ~ to!string(this));
+				SeslThrow(new Problem("not callable " ~ to!string(this)));
 			}
 		}
+		assert(0);
+	}
+	string pretty() {
+		return printer(this);
 	}
 	// override
 	string toString() {
-		return printer(this);
+		return pretty;
 	}
 	bool boolean() {
 		if (type == Enum.NULL) {
@@ -325,4 +314,157 @@ bool isCallable(Value value) {
 
 bool isFunction(Value value) {
 	return value.type == Type.FUNCTION || value.type == Type.PROGRAM;
+}
+
+
+T get(T)(State state, Value val) {
+	static if (is(T == string)) {
+		switch (val.type) {
+			case Type.FUNCTION: {
+				return state.get!string(val(state, null));
+			}
+			case Type.PROGRAM: {
+				return state.get!string(val(state, null));
+			}
+			default: {
+				return to!string(val);
+			}
+		}
+	}
+	static if (is(T == double)) {
+		switch (val.type) {
+			case Type.DOUBLE: {
+				return val.obj._double;
+			}
+			case Type.STRING: {
+				return parse!double(val.obj._string);
+			}
+			case Type.BOOL: {
+				return val.obj._bool ? 1 : 0;
+			}
+			case Type.FUNCTION: {
+				return state.get!double(val(state, null));
+			}
+			case Type.PROGRAM: {
+				return state.get!double(val(state, null));
+			}
+			default: {
+				SeslThrow(new Problem("Cannot convert " ~ val.pretty ~ " to number"));
+			}
+		}
+	}
+	static if (is(T == bool)) {
+		switch (val.type) {
+			case Type.FUNCTION: {
+				return state.get!bool(val(state, null));
+			}
+			case Type.PROGRAM: {
+				return state.get!bool(val(state, null));
+			}
+			case Type.BOOL: {
+				return val.obj._bool;
+			}
+			default: {
+				SeslThrow(new Problem("Cannot convert " ~ val.pretty ~ " to boolean"));
+			}
+		}
+	}
+	static if (is (T == void)) {
+		switch (val.type) {
+			case Type.FUNCTION: {
+				val(state, null);
+				return;
+			}
+			case Type.PROGRAM: {
+				val(state, null);
+				return;
+			}
+			case Type.NULL: {
+				return;
+			}
+			default: {
+				SeslThrow(new Problem("Cannot convert " ~ val.pretty ~ " to null"));
+			}
+		}
+	}
+	static if (is(T == Value[])) {
+		switch (val.type) {
+			case Type.FUNCTION: {
+				return state.get!(Value[])(val(state, null));
+			}
+			case Type.PROGRAM: {
+				return state.get!(Value[])(val(state, null));
+			}
+			case Type.TABLE: {
+				Value[] ret;
+				foreach (i; val.obj._table.byKeyValue) {
+					ret ~= i.key;
+				}
+				return ret;
+			}
+			case Type.NULL: {
+				return cast(Value[]) null;
+			}
+			case Type.LIST: {
+				return val.obj._list;
+			}
+			case Type.STRING: {
+				Value[] ret;
+				foreach (i; val.obj._string) {
+					ret ~= newValue(to!string(i));
+				}
+				return ret;
+			}
+			default: {
+				SeslThrow(new Problem("Cannot convert " ~ val.pretty ~ " to list"));
+			}
+		}
+	}
+	static if (is(T == Value[Value])) {
+		switch (val.type) {
+			case Type.FUNCTION: {
+				return state.get!(Value[])(val(state, null));
+			}
+			case Type.PROGRAM: {
+				return state.get!(Value[])(val(state, null));
+			}
+			case Type.LIST: {
+				Value[Value] ret;
+				foreach (i, v; val.obj._list) {
+					ret[newValue(i)] = v;
+				}
+				return ret;
+			}
+			case Type.STRING: {
+				Value[Value] ret;
+				foreach (i, v; value._string) {
+					ret[newValue(i)] = newValue(to!string(v));
+				}
+				return ret;
+			}
+			case Type.TABLE: {
+				return val.obj._table;
+			}
+			default: {
+				SeslThrow(new Problem("Cannot convert " ~ val.pretty ~ " to list"));
+			}
+		}
+	}
+	static if (is(T == Problem)) {
+		switch (val.type) {
+			case Type.FUNCTION: {
+				return state.get!problem(val(state, null));
+			}
+			case Type.PROGRAM: {
+				return state.get!problem(val(state, null));
+			}
+			case Type.STRING: {
+				return new Problem(val.obj._string));
+			}
+			default: {
+				SeslThrow(new Problem("Cannot convert " ~ val.pretty ~ " to problem"));
+			}
+		}
+	}
+	assert(0);
 }

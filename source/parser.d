@@ -22,7 +22,7 @@ class ParseString {
 		}
 		return '\0';
 	}
-	char read() {
+	char read(bool B=true)() {
 		char got = peek;
 		where ++;
 		if (got == '\n' || got == '\r') {
@@ -30,32 +30,38 @@ class ParseString {
 			col = 0;
 		}
 		col ++;
-		if (got == '#') {
-			while (peek != '\n' && peek != '\r' && peek != '\0') {
-				read;
-			}
-			return '\n';
-		}
-		return got;
-	}
-	void lstrip() {
-		while (canFind("\t #", peek)) {
-			if (peek == '#') {
+		static if (B) {
+			if (got == '#') {
 				while (peek != '\n' && peek != '\r' && peek != '\0') {
 					read;
 				}
-				lstrip;
+				return '\n';
+			}
+		}
+		return got;
+	}
+	void lstrip(bool B=true)() {
+		while (canFind("\t #", peek)) {
+			static if (B) {
+				if (peek == '#') {
+					while (peek != '\n' && peek != '\r' && peek != '\0') {
+						read;
+					}
+					lstrip;
+				}
 			}
 			read;
 		}
 	}
-	void strip() {
+	void strip(bool B=true)() {
 		while (canFind("\r\n\t ", peek)) {
-			while (peek == '#') {
-				while (peek != '\n' && peek != '\r' && peek != '\0') {
-					read;
+			static if (B) {
+				while (peek == '#') {
+					while (peek != '\n' && peek != '\r' && peek != '\0') {
+						read;
+					}
+					strip;
 				}
-				strip;
 			}
 			read;
 		}
@@ -107,7 +113,7 @@ class Word {
 		if (str.peek == '"') {
 			str.read;
 			while (str.peek != '"') {
-				val ~= str.read;
+				val ~= str.read!false;
 			}
 			str.read;
 			type = Type.STR;
@@ -187,7 +193,7 @@ class Program {
 	size_t where;
 	string name;
 	BytecodeCompiler comp;
-	ulong stackneed = 1;
+	size_t stackneed = 1;
 	this(ParseString str) {
 		// writeln("1: ", cast(void *) this);
 		str.strip;
@@ -200,7 +206,7 @@ class Program {
 		}
 		where = 0;
 	}
-	this(Program p, size_t w, ulong sn) {
+	this(Program p, size_t w, size_t sn) {
 		// writeln("2: ", cast(void *) this);
 		where = w;
 		comp = p.comp;
@@ -235,9 +241,9 @@ class Program {
 	}
 }
 
-ulong notOkay(string code) {
+size_t notOkay(string code) {
 	size_t pl = 0;
-	ulong depth = 0;
+	size_t depth = 0;
 	while (pl < code.length) {
 		switch (code[pl]) {
 			case '{', '(': {

@@ -1,0 +1,31 @@
+proc test val name {
+    if {get val | not} {
+        problem failed test $name
+    }
+}
+
+= $nil $nil | test "compare equal nil nil"
+= 1 1 | test "compare equal two numbers"
+= 6 6 6 | test "compare equal three numbers"
+!= 1 12 | test "compare unique two numbers"
+!= 7 24 31 | test "compare unique three numbers"
+
+= $nil $true | not | test "compare equal nil true"
+= $nil $false | not | test "compare equal nil false"
+!= 5 5 | not | test "compare unique two numbers false"
+!= 7 20 7 | not | test "compare unique three numbers false"
+
+set x 2 | = 2 | test "set return value"
+get x | = 2 | test "local value using get"
+
+set i 1
+while {< $i 100} {
+    get i | * 2 | into i
+} | = 128 | test "while loop return value"
+
+for {set i 0} {get i | < 10} {get i | + 1 | into i} {
+    get i | < 10 | test "for loop condition"
+    get i
+} | = 9 | test "for loop return value"
+
++ 10 1 | range | inject + | = 55 | test "inject and range return value" 

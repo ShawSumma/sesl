@@ -1,0 +1,15 @@
+proc primes n {
+    range 2 $n | filter {
+        get true | into prime
+        set i 2
+        while {and {args 0 | > $i} {get prime}} {
+            if {args 0 | % $i | = 0} {
+                get false | into prime
+            }
+            get i | + 1 | into i
+        }
+        get prime
+    }
+}
+
+primes 5000 | length | echo

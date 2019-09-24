@@ -2,12 +2,20 @@ import std.stdio;
 import std.conv;
 import value;
 
+void SeslThrow(Problem prob) {
+    throw prob;
+}
+
+void SeslThrow(Error prob) {
+    throw prob;
+}
+
 void typeMustBe(Value value, Type type, string file=__FILE__, int line=__LINE__) {
     if ((value.type == Type.STRING || value.type == Type.BOOL) && type == Type.DOUBLE) {
         return;
     }
     if (value.type != type) {
-        throw new TypeProblem("value " ~ to!string(value) ~ " is not of type " ~ to!string(type), file, line);
+        SeslThrow(new TypeProblem("value " ~ to!string(value) ~ " is not of type " ~ to!string(type), file, line));
     }
 }
 
@@ -19,13 +27,13 @@ void typeMustBeIn(Value value, Type[] types, string file=__FILE__, int line=__LI
         }
     }
     if (!okay) {
-        throw new TypeProblem("value " ~ to!string(value) ~ " is not of correct type");
+        SeslThrow(new TypeProblem("value " ~ to!string(value) ~ " is not of correct type"));
     }
 }
 
 void mustBeCallable(Value value, string file=__FILE__, int line=__LINE__) {
     if (!isCallable(value)) {
-        throw new TypeProblem("value " ~ to!string(value) ~ " is not callable", file, line);
+        SeslThrow(new TypeProblem("value " ~ to!string(value) ~ " is not callable", file, line));
     }
 }
 

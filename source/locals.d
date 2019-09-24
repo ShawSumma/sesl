@@ -29,74 +29,56 @@ Value libget(State state, Value[] args) {
 }
 
 Value libadd(State state, Value[] args) {
-    foreach (i; args) {
-        typeMustBe(i, Type.DOUBLE);
-    }
     double n = 0;
     foreach (i; args) {
-        n += i._double;
+        n += state.get!double(i);
     }
     return newValue(n);
 }
 
 Value libsub(State state, Value[] args) {
-    foreach (i; args) {
-        typeMustBe(i, Type.DOUBLE);
-    }
     if (args.length == 1) {
-        return newValue(-args[0]._double);
+        return newValue(-state.get!double(args[0]));
     }
-    double n = args[0]._double;
+    double n = state.get!double(args[0]);
     foreach (i; args[1..$]) {
-        n -= i._double;
+        n -= state.get!double(i);
     }
     return newValue(n);
 }
 
 Value libmul(State state, Value[] args) {
-    foreach (i; args) {
-        typeMustBe(i, Type.DOUBLE);
-    }
     double n = 1;
     foreach (i; args) {
-        n *= i._double;
+        n *= state.get!double(i);
     }
     return newValue(n);
 }
 
 Value libdiv(State state, Value[] args) {
-    foreach (i; args) {
-        typeMustBe(i, Type.DOUBLE);
-    }
     if (args.length == 1) {
-        return newValue(1/args[0]._double);
+        return newValue(1/state.get!double(args[0]));
     }
-    double n = args[0]._double;
+    double n = state.get!double(args[0]);
     foreach (i; args[1..$]) {
-        n /= i._double;
+        n /= state.get!double(i);
     }
     return newValue(n);
 }
 
 Value libmod(State state, Value[] args) {
-    foreach (i; args) {
-        typeMustBe(i, Type.DOUBLE);
-    }
-    double n = args[0]._double;
+    double n = state.get!double(args[0]);
     foreach (i; args[1..$]) {
-        n = n % i._double;
+        n = n % state.get!double(i);
     }
     return newValue(n);
 }
 
 Value order(string S)(State state, Value[] args) {
-    foreach (i; args) {
-        typeMustBe(i, Type.DOUBLE);
-    }
     Value v = args[0];
     bool result = true;
     foreach (i; args[1..$]) {
-        if (!mixin("v._double" ~ S ~ "i._double")) {
+        if (!mixin("state.get!double(v)" ~ S ~ "state.get!double(i)")) {
             result = false;
             break;
         }
@@ -128,11 +110,8 @@ Value libequals(State state, Value[] args) {
 }
 
 Value proc(State state, Value[] args) {
-    foreach (i; args[1..$-1]) {
-        typeMustBe(i, Type.STRING);
-    }
     Program fnpre = args[$-1].obj._program;
-    Program fn = new Program(fnpre, to!string(args[0]));
+    Program fn = new Program(fnpre, state.get!string(args[0]));
     fn.argnames = null;
     foreach (i; args[1..$-1]) {
         fn.argnames ~= i.obj._string;
@@ -143,7 +122,6 @@ Value proc(State state, Value[] args) {
 
 Value iflib(State state, Value[] args) {
     Value ret;
-    mustBeCallable(args[0]);
     if (args[0].opCall!false(state).boolean) {
         mustBeCallable(args[1]);
         ret = args[1].opCall!false(state);
@@ -161,7 +139,7 @@ Value iflib(State state, Value[] args) {
 
 Value pass(State state, Value[] args) {
     if (args.length == 0) {
-        throw new ArgcProblem(args);
+        SeslThrow(new ArgcProblem(args));
     }
     return args[$-1];
 }
@@ -172,7 +150,7 @@ Value liblist(State state, Value[] args) {
 
 Value libtable(State state, Value[] args) {
     if (args.length % 2 != 0) {
-        throw new ArgcProblem(args);
+        SeslThrow(new ArgcProblem(args));
     }
     Value[Value] table;
     foreach (i; 0..args.length) {
@@ -185,7 +163,6 @@ Value libtable(State state, Value[] args) {
 
 Value libwhile(State state, Value[] args) {
     Value ret = newValue();
-    mustBeCallable(args[1]);
     while (args[0].opCall!false(state).boolean) {
         ret = args[1].opCall!false(state);
     }
@@ -203,7 +180,6 @@ Value libwrite(State state, Value[] args) {
 }
 
 Value libpush(State state, Value[] args) {
-    typeMustBe(args[0], Type.LIST);
     args[0].obj._list ~= args[1..$];
     return args[0];
 } 
@@ -236,7 +212,7 @@ Value libor(State state, Value[] args) {
 
 Value libproblem(State state, Value[] args) {
     if (args.length == 1 && args[0].type == Type.PROBLEM) {
-        throw args[0].obj._problem;
+        SeslThrow(args[0].obj._problem);
     }
     else {
         string problem;
@@ -244,10 +220,11 @@ Value libproblem(State state, Value[] args) {
             if (i != 0) {
                 problem ~= " ";
             }
-            problem ~= to!string(args[i]);
+            problem ~= state.get!string(args[i]);
         }
-        throw new Problem(problem);
+        SeslThrow(new Problem(problem));
     }
+    assert(0);
 }
 
 Value libtry(State state, Value[] args) {
@@ -279,7 +256,7 @@ Value libtry(State state, Value[] args) {
             }
             catch (Problem problem) {
                 LocalLevel local = createLocalLevel();
-                local[to!string(args[1])] = newValue(problem);
+                local[state.get!string(args[1])] = newValue(problem);
                 state.locals ~= local;
                 Value ret = args[2].opCall!false(state);
                 state.locals.popBack;
@@ -287,9 +264,10 @@ Value libtry(State state, Value[] args) {
             }
         }
         default: {
-            throw new ArgcProblem(args);
+            SeslThrow(new ArgcProblem(args));
         }
     }
+    assert(0);
 }
 
 Value libequal(State state, Value[] args) {
@@ -337,7 +315,6 @@ Value libnames(State state, Value[] args) {
 Value libeach(State state, Value[] args) {
     Value[] ret;
     Value fn = args[1];
-    typeMustBe(args[0], Type.LIST);
     mustBeCallable(fn);
     foreach (i; args[0].obj._list) {
         ret ~= fn(state, [i]);
@@ -345,7 +322,6 @@ Value libeach(State state, Value[] args) {
     return newValue(ret);
 }
 Value libapply(State state, Value[] args) {
-    typeMustBe(args[$-2], Type.LIST); 
     mustBeCallable(args[$-1]);
     if (args.length == 2) {
         return args[$-1](
@@ -363,7 +339,6 @@ Value libapply(State state, Value[] args) {
 }
 Value libinject(State state, Value[] args) {
     Value fn = args[$-1];
-    typeMustBe(args[0], Type.LIST);
     mustBeCallable(fn);
     if (args.length == 3) {
         Value value = args[1];
@@ -384,7 +359,6 @@ Value libinject(State state, Value[] args) {
 Value libfilter(State state, Value[] args) {
     Value[] ret;
     Value fn = args[1];
-    typeMustBe(args[0], Type.LIST);
     mustBeCallable(fn);
     foreach (i; args[0].obj._list) {
         if (fn(state, [i]).boolean) {
@@ -397,12 +371,12 @@ Value libfilter(State state, Value[] args) {
 Value librange(State state, Value[] args) {
     Value[] ret;
     if (args.length == 1) {
-        foreach (i; 0..args[0]._double) {
+        foreach (i; 0..state.get!double(args[0])) {
             ret ~= newValue(i);
         }
     }
     else {
-        foreach (i; args[0]._double..args[1]._double) {
+        foreach (i; state.get!double(args[0])..state.get!double(args[1])) {
             ret ~= newValue(i);
         }
     }
@@ -428,13 +402,27 @@ Value libfor(State state, Value[] args) {
     return ret;
 }
 
+Value libnot(State state, Value[] args) {
+    return newValue(!args[$-1].boolean);
+}
 
-Value libforeach(State state, Value[] args) {
-    mustBeCallable(args[1]);
-    typeMustBe(args[0], Type.LIST);
-    Value[] ret;
-    foreach (i; args[0].obj._list) {
-        ret ~= args[1](state, [i]);
+Value libstrcat(State state, Value[] args) {
+    char[] ret;
+    foreach (i; args) {
+        ret ~= state.get!string(i);
     }
-    return newValue(ret);
+    return newValue(cast(string) ret);
+}
+
+Value liblength(State state, Value[] args) {
+    return newValue(state.get!(Value[])(args[0]).length);
+}
+
+Value libcurry(State state, Value[] args) {
+    mustBeCallable(args[0]);
+    Value[] rest = args[1..$];
+    Value func(State substate, Value[] subargs) {
+        return args[0](substate, rest ~ subargs);
+    }
+    return Value(ValueFun(&func, ""));
 }
