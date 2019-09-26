@@ -1,6 +1,5 @@
 import std.stdio;
 import value;
-import locals;
 import states;
 
 version = LOCALS_ARE_AA;

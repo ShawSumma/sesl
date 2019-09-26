@@ -12,21 +12,22 @@ import errors;
 void main(string[] args) {
     string[string] opts = [
         "mode": "interp",
+        "std": "stdlib",
     ];
     foreach (i; args) {
         if (i.length > 2 && i[0..2] == "--") {
             size_t spl = 0;
             foreach (j; 2..i.length) {
-                if (j == '=') {
+                if (i[j] == '=') {
                     spl = j;
                     break;
                 }
             }
             if (spl == 0) {
-                opts[i[0..spl]] = "true";
+                opts[i[2..spl]] = "true";
             }
             else {
-                opts[i[0..spl]] = i[spl+1..$];
+                opts[i[2..spl]] = i[spl+1..$];
             }
         }
     }
@@ -38,13 +39,13 @@ void main(string[] args) {
         names ~= i;
     }
     if (names.length == 0) {
-        repl();
+        repl(opts);
     }
     else {
         foreach (i; names) {
             ParseString code = new ParseString(cast(string) read(i));
             Program prog = new Program(code);
-            State state = new State();
+            State state = new State(opts["std"]);
             switch (opts["mode"]) {
                 case "interp": {
                     prog.compile;

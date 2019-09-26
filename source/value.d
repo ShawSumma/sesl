@@ -179,7 +179,6 @@ struct Value {
 	// override bool opEquals(Object oobj) const {
 	bool opEquals(Value oobj) const {
 		Value other = cast(Value) oobj;
-		// writeln(other.type, " ", type);
 		if (other.type != type) {
 			return false;
 		}
@@ -245,21 +244,25 @@ struct Value {
 				return state.lookup(to!string(obj._double)).opCall!T(state, args);
 			}
 			case Enum.PROGRAM: {
-				LocalLevel local = createLocalLevel();
 				Program prog = obj._program;
+				size_t nargc = min(args.length, prog.argnames.length);
 				static if (T) {
-					size_t nargc = min(args.length, prog.argnames.length);
+					LocalLevel local = createLocalLevel();
 					foreach (i; 0..nargc) {
 						local[prog.argnames[i]] = args[i];
 					}
 					local["args"] = newValue(args);
-					state.locals ~= local;
+					State before = new State(state);
+					before.locals = local;
+					return before.run(obj._program);
 				}
-				Value ret = state.run(prog);
-				static if (T) {
-					state.locals.popBack;
+				static if (!T) {
+					foreach (i; 0..nargc) {
+						state.locals[prog.argnames[i]] = args[i];
+					}
+					state.locals["args"] = newValue(args);
+					return state.run(obj._program);
 				}
-				return ret;
 			}
 			case Enum.FUNCTION: {
 				return obj._function.fun(state, args);
@@ -453,13 +456,13 @@ T get(T)(State state, Value val) {
 	static if (is(T == Problem)) {
 		switch (val.type) {
 			case Type.FUNCTION: {
-				return state.get!problem(val(state, null));
+				return state.get!Problem(val(state, null));
 			}
 			case Type.PROGRAM: {
-				return state.get!problem(val(state, null));
+				return state.get!Problem(val(state, null));
 			}
 			case Type.STRING: {
-				return new Problem(val.obj._string));
+				return new Problem(val.obj._string);
 			}
 			default: {
 				SeslThrow(new Problem("Cannot convert " ~ val.pretty ~ " to problem"));

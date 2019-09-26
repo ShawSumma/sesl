@@ -6,4 +6,4 @@ proc fib n {
     }
 }
 
-echo (fib 30)
+echo (fib 5)

@@ -195,7 +195,6 @@ class Program {
 	BytecodeCompiler comp;
 	size_t stackneed = 1;
 	this(ParseString str) {
-		// writeln("1: ", cast(void *) this);
 		str.strip;
 		while (!canFind("}\0", str.peek)) {
 			commands ~= new Command(str);
@@ -207,18 +206,15 @@ class Program {
 		where = 0;
 	}
 	this(Program p, size_t w, size_t sn) {
-		// writeln("2: ", cast(void *) this);
 		where = w;
 		comp = p.comp;
 		stackneed = sn;
 	}
 	this(BytecodeCompiler c, size_t w=1) {
-		// writeln("3: ", cast(void *) this);
 		where = w;
 		comp = c;
 	}
 	this(Program old) {
-		// writeln("4: ", cast(void *) this);
 		line = old.line;
 		col = old.col;
 		commands = old.commands;
@@ -229,7 +225,6 @@ class Program {
 		stackneed = old.stackneed;
 	}
 	this(Program old, string n) {
-		// writeln("5: ", cast(void *) this);
 		line = old.line;
 		col = old.col;
 		commands = old.commands;
@@ -239,33 +234,4 @@ class Program {
 		name = n;
 		stackneed = old.stackneed;
 	}
-}
-
-size_t notOkay(string code) {
-	size_t pl = 0;
-	size_t depth = 0;
-	while (pl < code.length) {
-		switch (code[pl]) {
-			case '{', '(': {
-				depth ++;
-				break;
-			}
-			case '}', ')': {
-				depth --;
-				break;
-			}
-			case '"': {
-				while (pl < code.length && code[pl] != '"') {
-					if (code[pl] == '\\') {
-						pl ++;
-					}
-					pl ++;
-				}
-				break;
-			}
-			default: {}
-		}
-		pl ++;
-	}
-	return depth;
 }

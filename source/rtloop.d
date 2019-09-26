@@ -6,22 +6,11 @@ import states;
 import byteconv;
 import value;
 
-void repl() {
-    State state = new State();
+void repl(string[string] opts) {
+    State state = new State(opts["std"]);
     while (true) {
-        string code;
-        size_t diff = 0;
         write(">>> ");
-        do {
-            foreach (i; 0..diff) {
-                write("    ");
-            }
-            code ~= readln;
-            diff = notOkay(code);
-            if (diff) {
-                write("    ");
-            }
-        } while (diff);
+        string code = readln;
         ParseString str = new ParseString(code);
         Program prog = new Program(str);
         Value got = state.run(prog);

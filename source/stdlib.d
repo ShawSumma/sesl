@@ -2,6 +2,8 @@ import std.stdio;
 import std.range;
 import std.conv;
 import std.algorithm;
+import std.parallelism;
+import core.sync.mutex;
 import parser;
 import states;
 import errors;
@@ -25,7 +27,7 @@ Value libset(State state, Value[] args) {
 }
 
 Value libget(State state, Value[] args) {
-    return state.lookup(args[0].obj._string);
+    return state.lookup(state.get!string(args[0]));
 }
 
 Value libadd(State state, Value[] args) {
@@ -74,17 +76,24 @@ Value libmod(State state, Value[] args) {
     return newValue(n);
 }
 
+Value libpow(State state, Value[] args) {
+    double n = state.get!double(args[0]);
+    foreach (i; args[1..$]) {
+        n = n ^^ state.get!double(i);
+    }
+    return newValue(n);
+}
+
 Value order(string S)(State state, Value[] args) {
     Value v = args[0];
-    bool result = true;
     foreach (i; args[1..$]) {
         if (!mixin("state.get!double(v)" ~ S ~ "state.get!double(i)")) {
-            result = false;
-            break;
+            writeln("=true");
+            return newValue(false);
         }
         v = i;
     }
-    return newValue(result);
+    return newValue(true);
 }
 
 Value libnotequals(State state, Value[] args) {
@@ -114,7 +123,7 @@ Value proc(State state, Value[] args) {
     Program fn = new Program(fnpre, state.get!string(args[0]));
     fn.argnames = null;
     foreach (i; args[1..$-1]) {
-        fn.argnames ~= i.obj._string;
+        fn.argnames ~= state.get!string(i);
     }
     state.set(args[0], newValue(fn));
     return newValue();
@@ -212,7 +221,7 @@ Value libor(State state, Value[] args) {
 
 Value libproblem(State state, Value[] args) {
     if (args.length == 1 && args[0].type == Type.PROBLEM) {
-        SeslThrow(args[0].obj._problem);
+        SeslThrow(state.get!Problem(args[0]));
     }
     else {
         string problem;
@@ -255,12 +264,7 @@ Value libtry(State state, Value[] args) {
                 return args[0](state);
             }
             catch (Problem problem) {
-                LocalLevel local = createLocalLevel();
-                local[state.get!string(args[1])] = newValue(problem);
-                state.locals ~= local;
-                Value ret = args[2].opCall!false(state);
-                state.locals.popBack;
-                return ret;
+                return args[2].opCall!false(state, [newValue(problem)]);
             }
         }
         default: {
@@ -292,27 +296,7 @@ Value libnotequal(State state, Value[] args) {
     return newValue(true);
 }
 
-Value libvars(State state, Value[] args) {
-    Value[Value] ret;
-    foreach (i; 0..state.locals.length) {
-        foreach (kv; state.locals[i].byKeyValue) {
-            ret[newValue(kv.key)] = kv.value;
-        }
-    }
-    return newValue(ret);
-}
-
-Value libnames(State state, Value[] args) {
-    Value[] ret;
-    foreach (i; 0..state.locals.length) {
-        foreach (kv; state.locals[i].byKey) {
-            ret ~= newValue(kv);
-        }
-    }
-    return newValue(ret);
-}
-
-Value libeach(State state, Value[] args) {
+Value libforeach(State state, Value[] args) {
     Value[] ret;
     Value fn = args[1];
     mustBeCallable(fn);
@@ -321,6 +305,19 @@ Value libeach(State state, Value[] args) {
     }
     return newValue(ret);
 }
+
+Value libeach(State state, Value[] args) {
+    Value[] old = args[0].obj._list;
+    Value[] ret;
+    ret.length = old.length;
+    Value fn = args[1];
+    mustBeCallable(fn);
+    foreach (k, i; old.parallel) {
+        ret[k] = fn(state, [i]);
+    }
+    return newValue(ret);
+}
+
 Value libapply(State state, Value[] args) {
     mustBeCallable(args[$-1]);
     if (args.length == 2) {
@@ -337,7 +334,7 @@ Value libapply(State state, Value[] args) {
     }
     
 }
-Value libinject(State state, Value[] args) {
+Value libfold(State state, Value[] args) {
     Value fn = args[$-1];
     mustBeCallable(fn);
     if (args.length == 3) {

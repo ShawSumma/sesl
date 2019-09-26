@@ -1,0 +1,9 @@
+proc pow2 n {
+    if {get n | > 0} {
+        + (get n | - 1 | pow2) (get n | - 1 | pow2)
+    } {
+        pass 1
+    }
+}
+
+pow2 16 | echo

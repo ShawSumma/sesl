@@ -1,4 +1,6 @@
-proc fac n {
-    + $n 1 | range | inject +
+proc x y {
+    echo $y
+    < $y 2
 }
-fac 5 | echo
+
+echo (x 10)
