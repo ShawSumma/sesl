@@ -80,22 +80,23 @@ class State {
                     }
                     case Opcode.Type.CALL: {
                         stacksize -= arg;
-                        Value v = stack[stacksize-1](
+                        stack[stacksize-1] = stack[stacksize-1](
                             this,
-                            stack[stacksize..stacksize+arg].dup
+                            stack[stacksize..stacksize+arg]
                         );
-                        stack[stacksize-1] = v;
                         break;
                     }
                     case Opcode.Type.RET: {
+                        Value ret = stack[--stacksize];
                         GC.free(stack);
-                        return stack[--stacksize];
+                        return ret;
                     }
                 }
                 pl ++;
             }
+            Value ret = stack[--stacksize];
             GC.free(stack);
-            return stack[--stacksize];
+            return ret;
         }
         else {
             Value ret = newValue();

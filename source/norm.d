@@ -51,14 +51,14 @@ LocalLevel getStdLib(string s) {
         local.setLocal("%", &libmod);
         local.setLocal("pow", &libpow);
 
-        local.setLocal("foreach", &libforeach);
-        local.setLocal("each", &libeach);
+        local.setLocal("each", &libforeach);
         local.setLocal("apply", &libapply);
         local.setLocal("fold", &libfold);
         local.setLocal("filter", &libfilter);
         local.setLocal("curry", &libcurry);
 
         local.setLocal("range", &librange);
+
         return local;
     }
     throw new Problem("no such standard library " ~ s);

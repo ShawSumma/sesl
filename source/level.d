@@ -24,7 +24,7 @@ void setLocal(ref LocalLevel lvl, string name, Value val) {
     lvl[name] = val;
 }
 
-void setLocal(ref LocalLevel lvl, string name, Value function(State, Value[]) val) {
+void setLocal(ref LocalLevel lvl, string name, Del val) {
     lvl[name] = newValue(ValueFun(val, name));
 }
 

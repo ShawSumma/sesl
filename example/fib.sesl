@@ -1,9 +1,9 @@
 proc fib n {
-    if {< $n 2} {
+    if {> 2 $n} {
         pass $n
     } {
         + (- $n 2 | fib) (- $n 1 | fib)
     }
 }
 
-echo (fib 5)
+echo (fib 30)

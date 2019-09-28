@@ -1,6 +1,0 @@
-proc x y {
-    echo $y
-    < $y 2
-}
-
-echo (x 10)

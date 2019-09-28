@@ -11,22 +11,30 @@ import level;
 import errors;
 
 Value newValue(T...)(T args) {
-	return Value(args);
+	return new Value(args);
 }
 
-alias Fun = Value delegate(State, Value[]);
+alias Del = Value delegate(State, Value[]);
+alias Fun = Value function(State, Value[]);
 alias Type = Value.Enum;
 
 struct ValueFun {
-	Fun fun;
-	string name;
-	this(Fun f, string n) {
-		fun = f;
-		name = n;
+	union Union {
+		Del del;
+		Fun fun;
 	}
-	this(Value function(State, Value[]) f, string n) {
-		fun = toDelegate(f);
+	Union fun;
+	string name;
+	bool del = false;
+	this(Fun f, string n) {
+		fun.fun = f;
 		name = n;
+		del = false;
+	}
+	this(Del f, string n) {
+		fun.del = f;
+		name = n;
+		del = true;
 	}
 }
 
@@ -78,18 +86,18 @@ string printer(Value cur, Value[] above=null) {
 		}
 		case Type.PROGRAM: {
 			if (cur.obj._program.name.length != 0) {
-				return "<program " ~ cur.obj._program.name ~ ">";
+				return "<proc " ~ cur.obj._program.name ~ ">";
 			}
 			else {
-				return "<program>";
+				return "<proc>";
 			}
 		}
 		case Type.FUNCTION: {
 			if (cur.obj._function.name.length != 0) {
-				return "<function " ~ cur.obj._function.name ~ ">";
+				return "<proc " ~ cur.obj._function.name ~ ">";
 			}
 			else {
-				return "<function>";
+				return "<proc>";
 			}
 		}
 		case Type.PROBLEM: {
@@ -98,7 +106,7 @@ string printer(Value cur, Value[] above=null) {
 	}
 }
 
-struct Value {
+class Value {
 	enum Enum {
 		NULL,
 		BOOL,
@@ -122,6 +130,7 @@ struct Value {
 	}
 	Union obj;
 	Enum type = Enum.NULL;
+	this() {}
 	this(bool v) {
 		obj._bool = v;
 		type = Enum.BOOL;
@@ -154,9 +163,9 @@ struct Value {
 		obj._problem = v;
 		type = Enum.PROBLEM;
 	}
-	// override
+	override
 	size_t toHash() const nothrow
-	// @trusted
+	@trusted
 	{
 		switch (type) {
 			case Enum.DOUBLE: {
@@ -176,8 +185,8 @@ struct Value {
 			}
 		}
 	}
-	// override bool opEquals(Object oobj) const {
-	bool opEquals(Value oobj) const {
+	override bool opEquals(Object oobj) const {
+	// bool opEquals(Value oobj) const {
 		Value other = cast(Value) oobj;
 		if (other.type != type) {
 			return false;
@@ -232,10 +241,7 @@ struct Value {
 			}
 		}
 	}
-	Value opCall(bool T=true)(State state) {
-		return this.opCall!T(state, cast(Value[]) null);
-	}
-	Value opCall(bool T=true)(State state, Value[] args) {
+	Value opCall(bool T=true)(State state, Value[] args=null) {
 		switch (type) {
 			case Enum.STRING: {
 				return state.lookup(obj._string).opCall!T(state, args);
@@ -260,12 +266,16 @@ struct Value {
 					foreach (i; 0..nargc) {
 						state.locals[prog.argnames[i]] = args[i];
 					}
-					state.locals["args"] = newValue(args);
 					return state.run(obj._program);
 				}
 			}
 			case Enum.FUNCTION: {
-				return obj._function.fun(state, args);
+				if (obj._function.del) {
+					return obj._function.fun.del(state, args);
+				}
+				else {
+					return obj._function.fun.fun(state, args);
+				}
 			}
 			case Enum.TABLE: {
 				goto case;
@@ -294,7 +304,7 @@ struct Value {
 	string pretty() {
 		return printer(this);
 	}
-	// override
+	override
 	string toString() {
 		return pretty;
 	}

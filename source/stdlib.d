@@ -2,8 +2,8 @@ import std.stdio;
 import std.range;
 import std.conv;
 import std.algorithm;
-import std.parallelism;
 import core.sync.mutex;
+import std.parallelism;
 import parser;
 import states;
 import errors;
@@ -88,7 +88,6 @@ Value order(string S)(State state, Value[] args) {
     Value v = args[0];
     foreach (i; args[1..$]) {
         if (!mixin("state.get!double(v)" ~ S ~ "state.get!double(i)")) {
-            writeln("=true");
             return newValue(false);
         }
         v = i;
@@ -306,18 +305,6 @@ Value libforeach(State state, Value[] args) {
     return newValue(ret);
 }
 
-Value libeach(State state, Value[] args) {
-    Value[] old = args[0].obj._list;
-    Value[] ret;
-    ret.length = old.length;
-    Value fn = args[1];
-    mustBeCallable(fn);
-    foreach (k, i; old.parallel) {
-        ret[k] = fn(state, [i]);
-    }
-    return newValue(ret);
-}
-
 Value libapply(State state, Value[] args) {
     mustBeCallable(args[$-1]);
     if (args.length == 2) {
@@ -421,5 +408,5 @@ Value libcurry(State state, Value[] args) {
     Value func(State substate, Value[] subargs) {
         return args[0](substate, rest ~ subargs);
     }
-    return Value(ValueFun(&func, ""));
+    return newValue(ValueFun(&func, ""));
 }
