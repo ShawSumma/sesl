@@ -32,6 +32,7 @@ LocalLevel getStdLib(string s) {
         local.setLocal("get", &libget);
 
         local.setLocal("list", &liblist);
+        local.setLocal("pop", &libpop);
         local.setLocal("push", &libpush);
         local.setLocal("strcat", &libstrcat);
         local.setLocal("table", &libtable);
@@ -59,6 +60,7 @@ LocalLevel getStdLib(string s) {
 
         local.setLocal("range", &librange);
 
+        local.setLocal("cmds", &libcommands);
         return local;
     }
     throw new Problem("no such standard library " ~ s);

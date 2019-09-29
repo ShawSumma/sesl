@@ -1,0 +1,10 @@
+proc sasm code {
+    set tab (cmds $code)
+    for {set x 0} {< $x (length $tab)} {set x (+ $x 1)} {
+        echo (tab x)
+    }
+}
+
+sasm {
+    mov eax 10
+}

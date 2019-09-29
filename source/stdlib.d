@@ -4,11 +4,13 @@ import std.conv;
 import std.algorithm;
 import core.sync.mutex;
 import std.parallelism;
+import byteconv;
 import parser;
 import states;
 import errors;
 import level;
 import value;
+import ast;
 
 Value echo(State state, Value[] args) {
     foreach (i; 0..args.length) {
@@ -191,6 +193,11 @@ Value libpush(State state, Value[] args) {
     args[0].obj._list ~= args[1..$];
     return args[0];
 } 
+
+Value libpop(State state, Value[] args) {
+    args[0].obj._list.popBack;
+    return args[0];
+}
 
 Value liband(State state, Value[] args) {
     foreach (i; args) {
@@ -409,4 +416,8 @@ Value libcurry(State state, Value[] args) {
         return args[0](substate, rest ~ subargs);
     }
     return newValue(ValueFun(&func, ""));
+}
+
+Value libcommands(State state, Value[] args) {
+    return args[0].obj._program.astValue;
 }
