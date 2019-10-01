@@ -9,7 +9,6 @@ import core.memory;
 import core.stdc.stdlib;
 import value;
 import parser;
-import byteconv;
 import level;
 import errors;
 import norm;
@@ -46,65 +45,11 @@ class State {
         throw new Problem("lookup failed for " ~ s);
     }
 	Value run(Program prog) {
-        if (prog.where && prog.comp !is null) {
-            size_t stacksize = 0;
-            Value* stack = cast(Value *) GC.malloc(Value.sizeof * prog.stackneed);
-            size_t pl = prog.where;
-            while (pl < prog.comp.opcodes.length) {
-                immutable Opcode op = prog.comp.opcodes[pl];
-                immutable size_t arg = op.value;
-                final switch (op.type) {
-                    case Opcode.Type.PASS: {
-                        break;
-                    }
-                    case Opcode.Type.FUNC: {
-                        Program p = new Program(prog, pl+1, prog.comp.size_ts[arg+1]);
-                        stack[stacksize] = newValue(p);
-                        pl = prog.comp.size_ts[arg];
-                        stacksize ++;
-                        break;
-                    }
-                    case Opcode.Type.PUSH: {
-                        stack[stacksize] = prog.comp.values[arg];
-                        stacksize ++;
-                        break;
-                    }
-                    case Opcode.Type.LOAD: {
-                        stack[stacksize] = lookup(prog.comp.strings[arg]);
-                        stacksize ++;
-                        break;
-                    }
-                    case Opcode.Type.POP: {
-                        stacksize --;
-                        break;
-                    }
-                    case Opcode.Type.CALL: {
-                        stacksize -= arg;
-                        stack[stacksize-1] = stack[stacksize-1](
-                            this,
-                            stack[stacksize..stacksize+arg]
-                        );
-                        break;
-                    }
-                    case Opcode.Type.RET: {
-                        Value ret = stack[--stacksize];
-                        GC.free(stack);
-                        return ret;
-                    }
-                }
-                pl ++;
-            }
-            Value ret = stack[--stacksize];
-            GC.free(stack);
-            return ret;
+        Value ret = newValue();
+        foreach (i; prog.commands) {
+            ret = run(i.words);
         }
-        else {
-            Value ret = newValue();
-            foreach (i; prog.commands) {
-                ret = run(i);
-            }
-            return ret;
-        }
+        return ret;
 	}
 	Value run(Command cmd) {
 		return run(cmd.words);

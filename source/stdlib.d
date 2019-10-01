@@ -2,9 +2,7 @@ import std.stdio;
 import std.range;
 import std.conv;
 import std.algorithm;
-import core.sync.mutex;
-import std.parallelism;
-import byteconv;
+import core.memory;
 import parser;
 import states;
 import errors;
@@ -24,8 +22,27 @@ Value echo(State state, Value[] args) {
 }
 
 Value libset(State state, Value[] args) {
-    state.set(args[0], args[1]);
-    return args[1];
+    if (args.length == 2) {
+        state.set(args[0], args[1]);
+        return args[1];
+    }
+    else {
+        Value ret = state.lookup(state.get!string(args[0]));
+        Value v = ret;
+        foreach (i; args[1..$-2]) {
+            v = v.opCall(state, [i]);
+        }
+        if (v.type == Type.LIST) {
+            v.obj._list[cast(ulong) state.get!double(args[$-2])] = args[$-1];
+        }
+        else if (v.type == Type.TABLE) {
+            v.obj._table[args[$-2]] = args[$-1];
+        }
+        else {
+            throw new Problem("cannot set index of " ~ to!string(v));
+        }
+        return ret;
+    }
 }
 
 Value libget(State state, Value[] args) {
@@ -186,6 +203,7 @@ Value libwrite(State state, Value[] args) {
         }
         write(args[i]);
     }
+    stdout.flush;
     return newValue();
 }
 
@@ -306,7 +324,7 @@ Value libforeach(State state, Value[] args) {
     Value[] ret;
     Value fn = args[1];
     mustBeCallable(fn);
-    foreach (i; args[0].obj._list) {
+    foreach (i; state.get!(Value[])(args[0])) {
         ret ~= fn(state, [i]);
     }
     return newValue(ret);
@@ -420,4 +438,21 @@ Value libcurry(State state, Value[] args) {
 
 Value libcommands(State state, Value[] args) {
     return args[0].obj._program.astValue;
+}
+
+Value libchar(State state, Value[] args) {
+    return newValue(cast(double) state.get!string(args[0])[0]);
+}
+
+Value libascii(State state, Value[] args) {
+    return newValue(cast(string) [state.get!double(args[0])]);
+}
+
+Value libmemsize(State state, Value[] args) {
+    return newValue(GC.stats().usedSize);
+}
+
+Value libcollect(State state, Value[] args) {
+    GC.collect;
+    return newValue();
 }

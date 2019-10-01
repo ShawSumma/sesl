@@ -1,0 +1,32 @@
+proc bf code {
+    echo "set mem (list)"
+    echo "each (range 30000) {push $mem 0}"
+    echo "set ptr 15000"
+    each $code {
+        set cmd (args 0)
+        if {= $cmd +} {
+            echo "set mem $ptr (+ (mem $ptr) 1)"
+        }
+        if {= $cmd -} {
+            echo "set mem $ptr (- (mem $ptr) 1)"
+        }
+        if {= $cmd >} {
+            echo "set ptr (+ $ptr 1)"
+        }
+        if {= $cmd <} {
+            
+            echo "set ptr (- $ptr 1)"
+        }
+        if {= $cmd [} {
+            echo "while {!= (mem $ptr) 0} {"
+        }
+        if {= $cmd ]} {
+            echo "}"
+        }
+        if {= $cmd "."} {
+            echo "write (ascii (mem $ptr))"
+        }
+    }
+}
+
+bf ++++[>+++++<-]>[<+++++>-]+<+[>[>+>+<<-]++>>[<<+>>-]>>>[-]++>[-]+>>>+[[-]++++++>>>]<<<[[<++++++++<++>>-]+<.<[>----<-]<]<<[>>>>>[>>>[-]+++++++++<[>-<-]+++++++++>[-[<->-]+[<<<]]<[>+<-]>]<<-]<<-]

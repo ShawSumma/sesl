@@ -5,7 +5,6 @@ import std.conv;
 import std.file;
 import value;
 import states;
-import byteconv;
 
 class ParseString {
 	string str = null;
@@ -192,8 +191,6 @@ class Program {
 	string[] argnames;
 	size_t where;
 	string name;
-	BytecodeCompiler comp;
-	size_t stackneed = 1;
 	this(ParseString str) {
 		str.strip;
 		while (!canFind("}\0", str.peek)) {
@@ -205,24 +202,13 @@ class Program {
 		}
 		where = 0;
 	}
-	this(Program p, size_t w, size_t sn) {
-		where = w;
-		comp = p.comp;
-		stackneed = sn;
-	}
-	this(BytecodeCompiler c, size_t w=1) {
-		where = w;
-		comp = c;
-	}
 	this(Program old) {
 		line = old.line;
 		col = old.col;
 		commands = old.commands;
 		argnames = old.argnames;
 		where = old.where;
-		comp = old.comp;
 		name = old.name;
-		stackneed = old.stackneed;
 	}
 	this(Program old, string n) {
 		line = old.line;
@@ -230,8 +216,6 @@ class Program {
 		commands = old.commands;
 		argnames = old.argnames;
 		where = old.where;
-		comp = old.comp;
 		name = n;
-		stackneed = old.stackneed;
 	}
 }

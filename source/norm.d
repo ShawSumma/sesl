@@ -61,6 +61,12 @@ LocalLevel getStdLib(string s) {
         local.setLocal("range", &librange);
 
         local.setLocal("cmds", &libcommands);
+
+        local.setLocal("char", &libchar);
+        local.setLocal("ascii", &libascii);
+
+        local.setLocal("memsize", &libmemsize);
+        local.setLocal("collect", &libcollect);
         return local;
     }
     throw new Problem("no such standard library " ~ s);

@@ -3,7 +3,6 @@ import std.stdio;
 import std.conv;
 import parser;
 import states;
-import byteconv;
 import value;
 
 void repl(string[string] opts) {

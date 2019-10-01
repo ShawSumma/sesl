@@ -1,0 +1,194 @@
+set mem (list)
+each (range 30000) {push $mem 0}
+set ptr 15000
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+while {!= (mem $ptr) 0} {
+set ptr (+ $ptr 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set ptr (- $ptr 1)
+set mem $ptr (- (mem $ptr) 1)
+}
+set ptr (+ $ptr 1)
+while {!= (mem $ptr) 0} {
+set ptr (- $ptr 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set ptr (+ $ptr 1)
+set mem $ptr (- (mem $ptr) 1)
+}
+set mem $ptr (+ (mem $ptr) 1)
+set ptr (- $ptr 1)
+set mem $ptr (+ (mem $ptr) 1)
+while {!= (mem $ptr) 0} {
+set ptr (+ $ptr 1)
+while {!= (mem $ptr) 0} {
+set ptr (+ $ptr 1)
+set mem $ptr (+ (mem $ptr) 1)
+set ptr (+ $ptr 1)
+set mem $ptr (+ (mem $ptr) 1)
+set ptr (- $ptr 1)
+set ptr (- $ptr 1)
+set mem $ptr (- (mem $ptr) 1)
+}
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set ptr (+ $ptr 1)
+set ptr (+ $ptr 1)
+while {!= (mem $ptr) 0} {
+set ptr (- $ptr 1)
+set ptr (- $ptr 1)
+set mem $ptr (+ (mem $ptr) 1)
+set ptr (+ $ptr 1)
+set ptr (+ $ptr 1)
+set mem $ptr (- (mem $ptr) 1)
+}
+set ptr (+ $ptr 1)
+set ptr (+ $ptr 1)
+set ptr (+ $ptr 1)
+while {!= (mem $ptr) 0} {
+set mem $ptr (- (mem $ptr) 1)
+}
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set ptr (+ $ptr 1)
+while {!= (mem $ptr) 0} {
+set mem $ptr (- (mem $ptr) 1)
+}
+set mem $ptr (+ (mem $ptr) 1)
+set ptr (+ $ptr 1)
+set ptr (+ $ptr 1)
+set ptr (+ $ptr 1)
+set mem $ptr (+ (mem $ptr) 1)
+while {!= (mem $ptr) 0} {
+while {!= (mem $ptr) 0} {
+set mem $ptr (- (mem $ptr) 1)
+}
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set ptr (+ $ptr 1)
+set ptr (+ $ptr 1)
+set ptr (+ $ptr 1)
+}
+set ptr (- $ptr 1)
+set ptr (- $ptr 1)
+set ptr (- $ptr 1)
+while {!= (mem $ptr) 0} {
+while {!= (mem $ptr) 0} {
+set ptr (- $ptr 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set ptr (- $ptr 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set ptr (+ $ptr 1)
+set ptr (+ $ptr 1)
+set mem $ptr (- (mem $ptr) 1)
+}
+set mem $ptr (+ (mem $ptr) 1)
+set ptr (- $ptr 1)
+write (ascii (mem $ptr))
+set ptr (- $ptr 1)
+while {!= (mem $ptr) 0} {
+set ptr (+ $ptr 1)
+set mem $ptr (- (mem $ptr) 1)
+set mem $ptr (- (mem $ptr) 1)
+set mem $ptr (- (mem $ptr) 1)
+set mem $ptr (- (mem $ptr) 1)
+set ptr (- $ptr 1)
+set mem $ptr (- (mem $ptr) 1)
+}
+set ptr (- $ptr 1)
+}
+set ptr (- $ptr 1)
+set ptr (- $ptr 1)
+while {!= (mem $ptr) 0} {
+set ptr (+ $ptr 1)
+set ptr (+ $ptr 1)
+set ptr (+ $ptr 1)
+set ptr (+ $ptr 1)
+set ptr (+ $ptr 1)
+while {!= (mem $ptr) 0} {
+set ptr (+ $ptr 1)
+set ptr (+ $ptr 1)
+set ptr (+ $ptr 1)
+while {!= (mem $ptr) 0} {
+set mem $ptr (- (mem $ptr) 1)
+}
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set ptr (- $ptr 1)
+while {!= (mem $ptr) 0} {
+set ptr (+ $ptr 1)
+set mem $ptr (- (mem $ptr) 1)
+set ptr (- $ptr 1)
+set mem $ptr (- (mem $ptr) 1)
+}
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set mem $ptr (+ (mem $ptr) 1)
+set ptr (+ $ptr 1)
+while {!= (mem $ptr) 0} {
+set mem $ptr (- (mem $ptr) 1)
+while {!= (mem $ptr) 0} {
+set ptr (- $ptr 1)
+set mem $ptr (- (mem $ptr) 1)
+set ptr (+ $ptr 1)
+set mem $ptr (- (mem $ptr) 1)
+}
+set mem $ptr (+ (mem $ptr) 1)
+while {!= (mem $ptr) 0} {
+set ptr (- $ptr 1)
+set ptr (- $ptr 1)
+set ptr (- $ptr 1)
+}
+}
+set ptr (- $ptr 1)
+while {!= (mem $ptr) 0} {
+set ptr (+ $ptr 1)
+set mem $ptr (+ (mem $ptr) 1)
+set ptr (- $ptr 1)
+set mem $ptr (- (mem $ptr) 1)
+}
+set ptr (+ $ptr 1)
+}
+set ptr (- $ptr 1)
+set ptr (- $ptr 1)
+set mem $ptr (- (mem $ptr) 1)
+}
+set ptr (- $ptr 1)
+set ptr (- $ptr 1)
+set mem $ptr (- (mem $ptr) 1)
+}

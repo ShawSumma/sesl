@@ -4,14 +4,12 @@ import std.array;
 import std.conv;
 import parser;
 import states;
-import byteconv;
 import rtloop;
 import value;
 import errors;
 
 void main(string[] args) {
     string[string] opts = [
-        "mode": "interp",
         "std": "stdlib",
     ];
     foreach (i; args) {
@@ -46,18 +44,6 @@ void main(string[] args) {
             ParseString code = new ParseString(cast(string) read(i));
             Program prog = new Program(code);
             State state = new State(opts["std"]);
-            switch (opts["mode"]) {
-                case "interp": {
-                    prog.compile;
-                    break;
-                }
-                case "walk": {
-                    break;
-                }
-                default: {
-                    SeslThrow(new Problem("mode not known " ~ opts["mode"]));
-                }
-            }
             state.run(prog);
         }
     }
